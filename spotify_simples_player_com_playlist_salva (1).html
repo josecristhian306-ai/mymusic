@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MyMusic — Player</title>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: #121212;
+      color: #ffffff;
+    }
+
+    header {
+      padding: 16px 24px;
+      border-bottom: 1px solid #333;
+      font-size: 22px;
+      font-weight: bold;
+    }
+
+    main {
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      min-height: calc(100vh - 70px);
+    }
+
+    aside {
+      border-right: 1px solid #333;
+      padding: 16px;
+    }
+
+    aside h2 {
+      margin-top: 0;
+      font-size: 18px;
+    }
+
+    input, button {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 10px;
+      border-radius: 6px;
+      border: none;
+      font-size: 14px;
+    }
+
+    button {
+      background: #1db954;
+      color: #000;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    li {
+      padding: 8px;
+      border-bottom: 1px solid #333;
+      cursor: pointer;
+    }
+
+    li:hover {
+      background: #1e1e1e;
+    }
+
+    section {
+      padding: 20px;
+    }
+
+    iframe {
+      width: 100%;
+      height: 360px;
+      border-radius: 12px;
+      border: none;
+    }
+
+    .empty {
+      color: #aaa;
+      margin-top: 20px;
+    }
+
+    @media (max-width: 800px) {
+      main {
+        grid-template-columns: 1fr;
+      }
+      aside {
+        border-right: none;
+        border-bottom: 1px solid #333;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  MyMusic (estilo Spotify)
+</header>
+
+<main>
+  <aside>
+    <h2>Sua playlist</h2>
+    <input id="musicName" type="text" placeholder="Nome da música" />
+    <input id="musicLink" type="text" placeholder="Link do YouTube" />
+    <button onclick="addMusic()">Adicionar</button>
+
+    <ul id="playlist"></ul>
+    <p class="empty" id="emptyText">Nenhuma música adicionada</p>
+  </aside>
+
+  <section>
+    <div id="warning" style="display:none;background:#b00020;padding:12px;border-radius:8px;margin-bottom:16px;">
+      ⚠️ Atenção: este player precisa ser aberto como site (http://).<br>
+      Se você abriu o arquivo com duplo clique, o YouTube não vai tocar.
+    </div>
+    <h2 id="nowPlaying">Nenhuma música tocando</h2>
+    <iframe id="player" src="" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+  </section>
+</main>
+
+<script>
+  // Aviso automático se abrir como arquivo local
+  if (location.protocol === 'file:') {
+    document.getElementById('warning').style.display = 'block';
+  }
+
+
+  const playlistEl = document.getElementById('playlist');
+  const emptyText = document.getElementById('emptyText');
+  const player = document.getElementById('player');
+  const nowPlaying = document.getElementById('nowPlaying');
+
+  let playlist = JSON.parse(localStorage.getItem('playlist')) || [];
+
+  function savePlaylist() {
+    localStorage.setItem('playlist', JSON.stringify(playlist));
+  }
+
+  function renderPlaylist() {
+    playlistEl.innerHTML = '';
+    if (playlist.length === 0) {
+      emptyText.style.display = 'block';
+      return;
+    }
+    emptyText.style.display = 'none';
+
+    playlist.forEach((music, index) => {
+      const li = document.createElement('li');
+      li.textContent = music.name;
+      li.onclick = () => playMusic(index);
+      playlistEl.appendChild(li);
+    });
+  }
+
+  function extractVideoId(link) {
+    const match = link.match(/(v=|youtu.be\/)([a-zA-Z0-9_-]+)/);
+    return match ? match[2] : null;
+  }
+
+  function addMusic() {
+    const name = document.getElementById('musicName').value.trim();
+    const link = document.getElementById('musicLink').value.trim();
+    const videoId = extractVideoId(link);
+
+    if (!name || !videoId) {
+      alert('Nome ou link inválido');
+      return;
+    }
+
+    playlist.push({ name, videoId });
+    savePlaylist();
+    renderPlaylist();
+
+    document.getElementById('musicName').value = '';
+    document.getElementById('musicLink').value = '';
+  }
+
+  function playMusic(index) {
+    const music = playlist[index];
+    nowPlaying.textContent = 'Tocando: ' + music.name;
+    player.src = `https://www.youtube.com/embed/${music.videoId}?autoplay=1`;
+  }
+
+  renderPlaylist();
+</script>
+
+</body>
+</html>
